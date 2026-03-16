@@ -153,6 +153,3 @@ MIT — Utilisation libre, même en contexte professionnel et académique.
 
 ---
 
-<p align="center">
-  <sub>Fait avec ❤️ par <a href="https://github.com/caroneloham">Eloham</a> & Claude</sub>
-</p>
