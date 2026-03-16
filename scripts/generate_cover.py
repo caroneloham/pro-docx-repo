@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 generate_cover.py — Générateur de page de garde académique/professionnelle
-Design sobre, sérieux, niveau mémoire d'ingénieur / rapport professionnel.
 """
 
 from PIL import Image, ImageDraw, ImageFont
@@ -47,8 +46,7 @@ def _font(size, variant="serif-bold"):
     m = {
         "serif-bold": ["/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
                        "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"],
-        "serif": ["/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-                  "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"],
+        "serif": ["/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"],
         "serif-italic": ["/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf"],
         "sans": ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"],
         "sans-bold": ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"],
@@ -122,39 +120,73 @@ def generate_cover(config, output_path="cover.png"):
     _tc(d, y, config.get("auteur", ""), _font(54, "serif-bold"), c["primary"])
     y += 90
 
-    # ── Bloc infos ──
+    # ── Bloc infos — TOUS les champs disponibles ──
     info = []
+    
+    # Champs communs à tous les types
+    if config.get("formation"):
+        info.append(("Formation", config["formation"]))
+    if config.get("organisme"):
+        info.append(("Organisme", config["organisme"]))
+    
+    # Champs spécifiques par type
     if dt == "td":
-        for k, l in [("formation","Formation"),("module","Module"),("enseignant","Enseignant")]:
-            if config.get(k): info.append((l, config[k]))
+        if config.get("module"):
+            info.append(("Module", config["module"]))
+        if config.get("enseignant"):
+            info.append(("Enseignant", config["enseignant"]))
     elif dt == "memoire":
-        for k, l in [("formation","Formation"),("organisme","Organisme"),("entreprise","Entreprise d'accueil"),
-                      ("tuteurAcademique","Tuteur académique"),("tuteurEntreprise","Tuteur entreprise"),
-                      ("anneeAcademique","Année académique")]:
-            if config.get(k): info.append((l, config[k]))
+        if config.get("entreprise"):
+            info.append(("Entreprise d'accueil", config["entreprise"]))
+        if config.get("tuteurAcademique"):
+            info.append(("Tuteur académique", config["tuteurAcademique"]))
+        if config.get("tuteurEntreprise"):
+            info.append(("Tuteur entreprise", config["tuteurEntreprise"]))
     elif dt == "audit":
-        for k, l in [("organisme","Organisme"),("entreprise","Entité auditée"),("referentiel","Référentiel")]:
-            if config.get(k): info.append((l, config[k]))
+        if config.get("entreprise"):
+            info.append(("Entité auditée", config["entreprise"]))
+        if config.get("referentiel"):
+            info.append(("Référentiel", config["referentiel"]))
+        if config.get("tuteurAcademique"):
+            info.append(("Tuteur académique", config["tuteurAcademique"]))
+        if config.get("tuteurEntreprise"):
+            info.append(("Tuteur entreprise", config["tuteurEntreprise"]))
     else:
-        for k, l in [("formation","Formation / Poste"),("organisme","Organisme"),("entreprise","Entreprise")]:
-            if config.get(k): info.append((l, config[k]))
+        if config.get("entreprise"):
+            info.append(("Entreprise", config["entreprise"]))
+        if config.get("version"):
+            info.append(("Version", config["version"]))
+    
+    # Année académique — commun
+    if config.get("anneeAcademique"):
+        info.append(("Année académique", config["anneeAcademique"]))
 
     if info:
-        fl = _font(32, "sans-bold")
-        fv = _font(32, "sans")
+        fl = _font(34, "sans-bold")
+        fv = _font(34, "sans")
         mlw = max(_tw(d, f"{l} :", fl) for l, _ in info)
         
         y += 30
-        bp = 30
-        by0, by1 = y - bp, y + len(info) * 55 + bp
-        d.rectangle([mx+100, by0, W-mx-100, by1], fill=c["light"])
-        d.rectangle([mx+100, by0+8, mx+106, by1-8], fill=c["line"])
+        bp = 40
+        line_h = 60
+        by0, by1 = y - bp, y + len(info) * line_h + bp
+        
+        # Fond du bloc
+        d.rectangle([mx+80, by0, W-mx-80, by1], fill=c["light"])
+        
+        # Barre accent gauche
+        d.rectangle([mx+80, by0+10, mx+88, by1-10], fill=c["line"])
+        
+        # Ligne de séparation entre chaque champ
+        for i in range(1, len(info)):
+            sep_y = y + i * line_h - line_h//2 + 25
+            d.line([(mx+120, sep_y), (W-mx-120, sep_y)], fill=(210, 215, 225), width=1)
         
         for label, val in info:
-            lx = mx + 140
+            lx = mx + 130
             d.text((lx, y), f"{label} :", font=fl, fill=c["accent"])
-            d.text((lx + mlw + 40, y), val, font=fv, fill=c["text"])
-            y += 55
+            d.text((lx + mlw + 50, y), val, font=fv, fill=c["text"])
+            y += line_h
 
     # ── Date ──
     y += 80
@@ -163,7 +195,7 @@ def generate_cover(config, output_path="cover.png"):
     # ── Confidentiel ──
     if config.get("confidentiel"):
         y += 100
-        _tc(d, y, "— Document confidentiel —", _font(30, "sans-bold"), c["line"])
+        _tc(d, y, "— Document confidentiel —", _font(32, "sans-bold"), c["line"])
 
     # ── Double filet inférieur ──
     by = H - 180
@@ -192,9 +224,15 @@ if __name__ == '__main__':
         "type": "audit", "charte": "classique",
         "titre": "Audit de Sécurité du Système d'Information",
         "sousTitre": "Infrastructure réseau et systèmes d'information",
-        "auteur": "Eloham", "formation": "BUT RT — Cybersécurité",
-        "organisme": "IUT de Valence — UGA", "entreprise": "Kiventoo",
-        "referentiel": "ISO 27001 / EBIOS RM", "date": "Mars 2026",
+        "auteur": "Eloham",
+        "formation": "BUT RT — Cybersécurité",
+        "organisme": "IUT de Valence — UGA",
+        "entreprise": "Kiventoo",
+        "referentiel": "ISO 27001 / EBIOS RM",
+        "tuteurAcademique": "M. Dupont",
+        "tuteurEntreprise": "M. Mallet",
+        "anneeAcademique": "2025 — 2026",
+        "date": "Mars 2026",
         "confidentiel": True,
     }
     output = sys.argv[1] if len(sys.argv) > 1 else "/home/claude/pro-docx-repo/screenshots/cover_classique.png"

@@ -1,4 +1,6 @@
-
+<p align="center">
+  <img src="screenshots/cover_classique.png" alt="Pro-DOCX Cover Page" width="400"/>
+</p>
 
 <h1 align="center">🔒 Pro-DOCX</h1>
 
